@@ -1,0 +1,24 @@
+#!/bin/bash
+#
+# script to translate keys (user names) into automount rules.
+#
+
+[ "$#" = "1" ] || { echo bad args; exit 1; }
+
+KEYFILE=.ssh/authorized_keys
+eval "HOMEDIR=~$1"  # the way that ~ substitution works
+
+#
+# if this user has a file .ssh/authorized_keys within their real homedir
+# then return that, otherwise use the corresponding file from the vserver.
+#
+if [ -r "$HOMEDIR/$KEYFILE" ]; then
+    OUT=$HOMEDIR/.ssh
+elif [ -r "/vservers/$1/home/$1/$KEYFILE" ]; then
+    OUT=/vservers/$1/home/$1/.ssh
+else
+    echo $1 not found in /vservers or /home >/tmp/auto.pl_sshd.log
+    exit 1
+fi
+
+echo --bind,-r :$OUT
