@@ -1,7 +1,7 @@
 Summary: SSH server config for PlanetLab
 Name: pl_sshd
 Version: 1.0
-Release: 1
+Release: 2
 Requires: autofs, openssh-server
 Copyright: GPL
 URL: http://www.planet-lab.org
@@ -13,7 +13,7 @@ SSH server configuration for PlanetLab nodes.  Configures an automounted
 directory as source for authorized_keys files and points sshd to that
 directory.
 
-$Header: /cvs/pl_sshd/pl_sshd.spec,v 1.4 2003/12/01 22:16:47 sjm-pl_sshd Exp $
+$Header: /cvs/pl_sshd/pl_sshd.spec,v 1.5 2003/12/02 00:22:03 sjm-pl_sshd Exp $
 %prep
 %setup
 
@@ -71,9 +71,15 @@ if [ "$1" -ge 1 ]; then
 	chkconfig --add pl_sshd
 
 	if [[ "$RUNLEVEL" != "unknown" ]]; then
+		#
+		# starting pl_sshd before restarting sshd gives us a
+		# chance of recovery if stopping sshd aborts the
+		# update process e.g., because we're logged in using
+		# ssh.
+		#
 		/etc/init.d/autofs restart
-		/etc/init.d/sshd restart
 		/etc/init.d/pl_sshd start
+		/etc/init.d/sshd restart
 	fi
 fi
 
