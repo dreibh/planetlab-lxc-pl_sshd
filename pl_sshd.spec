@@ -13,7 +13,7 @@ SSH server configuration for PlanetLab nodes.  Configures an automounted
 directory as source for authorized_keys files and points sshd to that
 directory.
 
-$Header: /cvs/pl_sshd/pl_sshd.spec,v 1.2 2003/12/01 14:56:00 sjm-pl_sshd Exp $.
+$Header: /cvs/pl_sshd/pl_sshd.spec,v 1.3 2003/12/01 21:22:53 sjm-pl_sshd Exp $.
 %prep
 %setup
 
@@ -80,7 +80,7 @@ fi
 %preun
 RUNLEVEL=`/sbin/runlevel`
 
-if [ "$1" = 0 ]; then
+if [ "$1" -ge "0" ]; then
 	#
 	# stop pl_sshd, remove it from rcX.d init dirs, remove link
 	# to sshd's pam config
