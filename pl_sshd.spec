@@ -1,6 +1,6 @@
 %define name pl_sshd
 %define version 1.0
-%define release 4.planetlab%{?date:.%{date}}
+%define release 5.planetlab%{?date:.%{date}}
 
 Vendor: PlanetLab
 Packager: PlanetLab Central <support@planet-lab.org>
