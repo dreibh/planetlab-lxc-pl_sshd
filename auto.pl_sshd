@@ -1,24 +1,60 @@
 #!/bin/bash
 #
-# script to translate keys (user names) into automount rules.
+# autofs(5) executable map for /var/pl_sshd/keys/
+#
+# Mark Huang <mlhuang@cs.princeton.edu>
+# Copyright (C) 2004 The Trustees of Princeton University
+#
+# $Id: auto.pl_sshd,v 1.3 2004/10/04 18:43:16 mlh-pl_sshd Exp $
 #
 
-[ "$#" = "1" ] || { echo bad args; exit 1; }
-
-KEYFILE=.ssh/authorized_keys
-eval "HOMEDIR=~$1"  # the way that ~ substitution works
-
-#
-# if this user has a file .ssh/authorized_keys within their real homedir
-# then return that, otherwise use the corresponding file from the vserver.
-#
-if [ -r "$HOMEDIR/$KEYFILE" ]; then
-    OUT=$HOMEDIR/.ssh
-elif [ -r "/vservers/$1/home/$1/$KEYFILE" ]; then
-    OUT=/vservers/$1/home/$1/.ssh
-else
-    echo $1 not found in /vservers or /home >&2
+usage()
+{
+    echo "usage: $0 slice" >/dev/stderr
     exit 1
+}
+
+[ -z "$1" ] && usage
+slice="$1"
+
+# Try real home directory first
+eval home="~$slice"
+if [ -f "$home/.ssh/authorized_keys" ] ; then
+    echo "--bind,-r :$home/.ssh"
+    exit 0
 fi
 
-echo --bind,-r :$OUT
+# Try virtual server home directory next
+vhome=/vservers/$slice/$(su - $slice -c "echo \$HOME")
+
+echo -n "Retrieving SSH keys for $slice..." >/dev/stderr
+
+# Execute this script as the slice user. Remember that the script
+# 1. Must be executable by any shell.
+# 2. Must not write to stdout.
+# 3. Must return a non-zero exit code if an error occurs.
+# 4. May be run by a malicious shell.
+
+su - $slice >/dev/stderr <<EOF
+install -d -m 700 \$HOME/.ssh/
+touch \$HOME/.ssh/authorized_keys
+chmod 600 \$HOME/.ssh/authorized_keys
+
+curl -s \
+    --fail \
+    --connect-timeout 30 \
+    --max-time 60 \
+    --output \$HOME/.ssh/authorized_keys \
+    "http://localhost:815/keys?slice=$slice"
+EOF
+
+rc=$?
+if [ $rc -ne 0 ] ; then
+    echo "failed with error $rc." >/dev/stderr
+    exit $rc
+fi
+
+echo "succeeded." >/dev/stderr
+
+echo "--bind,-r :$vhome/.ssh"
+exit 0
