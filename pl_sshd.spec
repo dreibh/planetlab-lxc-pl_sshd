@@ -1,19 +1,28 @@
-Summary: SSH server config for PlanetLab
-Name: pl_sshd
-Version: 1.0
-Release: 3
-Requires: autofs, openssh-server
-Copyright: GPL
+%define name pl_sshd
+%define version 1.0
+%define release 4.planetlab%{?date:.%{date}}
+
+Vendor: PlanetLab
+Packager: PlanetLab Central <support@planet-lab.org>
+Distribution: PlanetLab 3.0
 URL: http://www.planet-lab.org
+
+Summary: SSH server config for PlanetLab
+Name: %{name}
+Version: %{version}
+Release: %{release}
+Requires: autofs, openssh-server
+License: GPL
 Group: System Environment/Base
-Source: %{_fullname}.tar.gz
+BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
+
+Source0: %{name}-%{version}.tar.bz2
 
 %description 
-SSH server configuration for PlanetLab nodes.  Configures an automounted
+SSH server configuration for PlanetLab nodes. Configures an automounted
 directory as source for authorized_keys files and points sshd to that
 directory.
 
-$Header: /cvs/pl_sshd/pl_sshd.spec,v 1.6 2003/12/03 22:33:50 sjm-pl_sshd Exp $
 %prep
 %setup
 
@@ -21,18 +30,17 @@ $Header: /cvs/pl_sshd/pl_sshd.spec,v 1.6 2003/12/03 22:33:50 sjm-pl_sshd Exp $
 
 
 %install
-mkdir -p $RPM_BUILD_ROOT/usr/local/sbin
-mkdir -p $RPM_BUILD_ROOT/etc/{sysconfig,init.d}
 mkdir -p $RPM_BUILD_ROOT/var/pl_sshd/keys
-install -m 0755 pl_sshd.sh $RPM_BUILD_ROOT/usr/local/sbin
-install -m 0755 pl_sshd $RPM_BUILD_ROOT/etc/init.d
-install -m 0755 auto.pl_sshd $RPM_BUILD_ROOT/etc
+install -D -m 0755 pl_sshd.sh $RPM_BUILD_ROOT/usr/local/sbin/pl_sshd.sh
+install -D -m 0755 pl_sshd $RPM_BUILD_ROOT/etc/init.d/pl_sshd
+install -D -m 0755 auto.pl_sshd $RPM_BUILD_ROOT/etc/auto.pl_sshd
 
 %clean
 rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root)
+%dir /var/pl_sshd/keys
 %attr(0755,root,root) /usr/local/sbin/pl_sshd.sh
 %attr(0755,root,root) /etc/init.d/pl_sshd
 %attr(0755,root,root) /etc/auto.pl_sshd
@@ -43,57 +51,58 @@ rm -rf $RPM_BUILD_ROOT
 %post
 RUNLEVEL=`/sbin/runlevel`
 
-if [ "$1" -ge 1 ]; then
-	# create the magic directory for automount
-	keydir=/var/pl_sshd/keys
-	[ -d $keydir ] || mkdir -p $keydir
+# 1 = install, 2 = upgrade/reinstall
+if [ $1 -ge 1 ]; then
+    # create the magic directory for automount
+    keydir=/var/pl_sshd/keys
 
-	# add appropriate entry to auto.master
-	auto_master=/etc/auto.master
-	auto_master_entry="$keydir /etc/auto.pl_sshd"
-	grep -qF "$auto_master_entry" $auto_master || \
-	    echo $auto_master_entry >>$auto_master
+    # add appropriate entry to auto.master
+    auto_master=/etc/auto.master
+    auto_master_entry="$keydir /etc/auto.pl_sshd"
+    grep -qF "$auto_master_entry" $auto_master || \
+	echo $auto_master_entry >>$auto_master
 
+    #
+    # use the sysconfig file to tell our system sshd to look in the
+    # magic location for authorized_keys files
+    #
+    sysconfig_sshd=/etc/sysconfig/sshd
+    [ -r $sysconfig_sshd ] && \
+	mv $sysconfig_sshd $sysconfig_sshd.pl_sshd
+    echo "OPTIONS='-o \"AuthorizedKeysFile $keydir/%u/authorized_keys\"'" \
+	>$sysconfig_sshd
+
+    # link sshd pam config to pl_sshd so that we can actually login
+    pam_pl_sshd=/etc/pam.d/pl_sshd
+    [ -r $pam_pl_sshd ] || ln -s sshd $pam_pl_sshd
+
+    chkconfig --add pl_sshd
+
+    if [[ "$RUNLEVEL" != "unknown" ]]; then
 	#
-	# use the sysconfig file to tell our system sshd to look in the
-	# magic location for authorized_keys files
+	# don't try to start/restart various things automatically,
+	# it's too ugly (particularly if we're upgrading while
+	# connected over ssh)
 	#
-	sysconfig_sshd=/etc/sysconfig/sshd
-	[ -r $sysconfig_sshd ] && \
-	    mv $sysconfig_sshd $sysconfig_sshd.pl_sshd
-	echo "OPTIONS='-o \"AuthorizedKeysFile $keydir/%u/authorized_keys\"'" \
-	    >$sysconfig_sshd
-
-	# link sshd pam config to pl_sshd so that we can actually login
-	pam_pl_sshd=/etc/pam.d/pl_sshd
-	[ -r $pam_pl_sshd ] || ln -s sshd $pam_pl_sshd
-
-	chkconfig --add pl_sshd
-
-	if [[ "$RUNLEVEL" != "unknown" ]]; then
-	    #
-	    # don't try to start/restart various things automatically,
-	    # it's too ugly (particularly if we're upgrading while
-	    # connected over ssh)
-	    #
-	    echo
-	    echo "You need to manually restart autofs and sshd, and"
-	    echo "start the pl_sshd (ssh on port 806) service."
-	    echo "Make sure you know what you're doing, particularly"
-	    echo "if you're making this change over an ssh connection."
-	    echo
-	fi
+	echo
+	echo "You need to manually restart autofs and sshd, and"
+	echo "start the pl_sshd (ssh on port 806) service."
+	echo "Make sure you know what you're doing, particularly"
+	echo "if you're making this change over an ssh connection."
+	echo
+    fi
 fi
 
 %preun
 RUNLEVEL=`/sbin/runlevel`
 
-if [ "$1" -ge "0" ]; then
+# 0 = erase, 1 = upgrade
+if [ $1 -ge 0 ]; then
 	#
 	# stop pl_sshd, remove it from rcX.d init dirs, remove link
 	# to sshd's pam config
 	#
-	[ "$RUNLEVEL" != "unknown" ] && /etc/init.d/pl_sshd stop
+	[ "$RUNLEVEL" = "unknown" ] || /etc/init.d/pl_sshd stop || :
 	chkconfig --del pl_sshd
 	rm -f /etc/pam.d/pl_sshd
 
