@@ -97,7 +97,7 @@ fi
 RUNLEVEL=`/sbin/runlevel`
 
 # 0 = erase, 1 = upgrade
-if [ $1 -ge 0 ]; then
+if [ $1 -eq 0 ]; then
 	#
 	# stop pl_sshd, remove it from rcX.d init dirs, remove link
 	# to sshd's pam config
