@@ -5,7 +5,7 @@
 Vendor: PlanetLab
 Packager: PlanetLab Central <support@planet-lab.org>
 Distribution: PlanetLab 3.0
-URL: http://www.planet-lab.org
+URL: http://cvs.planet-lab.org/cvs/pl_sshd
 
 Summary: SSH server config for PlanetLab
 Name: %{name}
