@@ -15,25 +15,15 @@
 
 # source function library
 . /etc/rc.d/init.d/functions
-#
+
 # pull in sysconfig settings
 [ -f /etc/sysconfig/pl_sshd ] && . /etc/sysconfig/pl_sshd
-
-# add the PlanetLab-specific options
-KEYDIR=/var/pl_sshd/keys
-OPTIONS="-p 806 -o 'AuthorizedKeysFile $KEYDIR/%u/authorized_keys'"
-AUTOMOUNT=/usr/sbin/automount
-AUTOMAP=/etc/auto.pl_sshd
-AUTOPID=
 
 RETVAL=0
 prog="pl_sshd"
 
 # Some functions to make the below more readable
-SSHD=/usr/sbin/sshd
-RSA1_KEY=/var/local/etc/ssh_host_key
-RSA_KEY=/var/local/etc/ssh_host_rsa_key
-DSA_KEY=/var/local/etc/ssh_host_dsa_key
+SSHD=/usr/local/sbin/pl_sshd.sh
 PID_FILE=/var/run/pl_sshd.pid
 
 do_restart_sanity_check()
@@ -46,27 +36,8 @@ do_restart_sanity_check()
 	fi
 }
 
-check_automount()
-{
-    # get pid for our automount process
-    AUTOPID=`mount | \
-	sed -ne "s%^automount(pid\([0-9]*\)) on $KEYDIR type autofs.*%\1%p"`
-
-    # check if that process is still alive
-    { [ -n "$AUTOPID" ] && ps -p $AUTOPID >/dev/null 2>&1; } || return 1
-
-    # check if we can actually mount a user dir in the automount dir
-    [ -d "$KEYDIR/root" ] || return 1
-}
-
 start()
 {
-        # make sure the key dir exists and automount is working on it
-        [ -d "$KEYDIR" ] || mkdir -p $KEYDIR
-	[ -x "$AUTOMAP" ] ||
-	{ echo "$AUTOMAP not executable"; return 1; }
-	check_automount || $AUTOMOUNT $KEYDIR program $AUTOMAP
-
 	echo -n $"Starting $prog:"
 	initlog -c "$SSHD $OPTIONS" && success || failure
 	RETVAL=$?
@@ -76,21 +47,17 @@ start()
 
 stop()
 {
-        check_automount && kill -USR2 $AUTOPID
-
-	#echo -n $"Stopping $prog:"
-	#killproc $SSHD -TERM
-	echo 'you need to kill the port 806 sshd(s) manually'
-	echo 'make sure not to kill the port 22 sshd...'
+	echo -n $"Stopping $prog:"
+	killproc $prog -TERM
 	RETVAL=$?
 	[ "$RETVAL" = 0 ] && rm -f /var/lock/subsys/pl_sshd
-	#echo
+        echo
 }
 
 reload()
 {
 	echo -n $"Reloading $prog:"
-	killproc $SSHD -HUP
+	killproc $prog -HUP
 	RETVAL=$?
 	echo
 }
@@ -121,8 +88,6 @@ case "$1" in
 		fi
 		;;
 	status)
-	        check_automount && echo automount running ||
-		    echo automount not functioning
 		status pl_sshd
 		RETVAL=$?
 		;;

@@ -17,7 +17,7 @@ if [ -r "$HOMEDIR/$KEYFILE" ]; then
 elif [ -r "/vservers/$1/home/$1/$KEYFILE" ]; then
     OUT=/vservers/$1/home/$1/.ssh
 else
-    echo $1 not found in /vservers or /home >/tmp/auto.pl_sshd.log
+    echo $1 not found in /vservers or /home >&2
     exit 1
 fi
 

@@ -1,8 +1,8 @@
 Summary: SSH server config for PlanetLab
 Name: pl_sshd
-Version: 0.1
+Version: 1.0
 Release: 1
-Requires: automount, sshd
+Requires: autofs, openssh-server
 Copyright: GPL
 URL: http://www.planet-lab.org
 Group: System Environment/Base
@@ -13,7 +13,7 @@ SSH server configuration for PlanetLab nodes.  Configures an automounted
 directory as source for authorized_keys files and points sshd to that
 directory.
 
-Created from $Header$.
+$Header: /cvs/pl_sshd/pl_sshd.spec,v 1.2 2003/12/01 14:56:00 sjm-pl_sshd Exp $.
 %prep
 %setup
 
@@ -21,10 +21,12 @@ Created from $Header$.
 
 
 %install
-install -m 0755 -o root -g root pl_sshd.sh $RPM_BUILD_ROOT/usr/local/sbin
-install -m 0755 -o root -g root pl_sshd $RPM_BUILD_ROOT/etc/init.d
-install -m 0755 -o root -g root auto.pl_sshd $RPM_BUILD_ROOT/etc
-echo "OPTIONS='-p 806'" >$RPM_BUILD_ROOT/etc/sysconfig/sshd
+mkdir -p $RPM_BUILD_ROOT/usr/local/sbin
+mkdir -p $RPM_BUILD_ROOT/etc/{sysconfig,init.d}
+mkdir -p $RPM_BUILD_ROOT/var/pl_sshd/keys
+install -m 0755 pl_sshd.sh $RPM_BUILD_ROOT/usr/local/sbin
+install -m 0755 pl_sshd $RPM_BUILD_ROOT/etc/init.d
+install -m 0755 auto.pl_sshd $RPM_BUILD_ROOT/etc
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -42,16 +44,70 @@ rm -rf $RPM_BUILD_ROOT
 RUNLEVEL=`/sbin/runlevel`
 
 if [ "$1" -ge 1 ]; then
+	# create the magic directory for automount
+	keydir=/var/pl_sshd/keys
+	[ -d $keydir ] || mkdir -p $keydir
+
+	# add appropriate entry to auto.master
+	auto_master=/etc/auto.master
+	auto_master_entry="$keydir /etc/auto.pl_sshd"
+	grep -qF "$auto_master_entry" $auto_master || \
+	    echo $auto_master_entry >>$auto_master
+
+	#
+	# use the sysconfig file to tell our system sshd to look in the
+	# magic location for authorized_keys files
+	#
+	sysconfig_sshd=/etc/sysconfig/sshd
+	[ -r $sysconfig_sshd ] && \
+	    mv $sysconfig_sshd $sysconfig_sshd.pl_sshd
+	echo "OPTIONS='-o \"AuthorizedKeysFile $keydir/%u/authorized_keys\"'" \
+	    >$sysconfig_sshd
+
+	# link sshd pam config to pl_sshd so that we can actually login
+	pam_pl_sshd=/etc/pam.d/pl_sshd
+	[ -r $pam_pl_sshd ] || ln -s sshd $pam_pl_sshd
+
 	chkconfig --add pl_sshd
 
 	if [[ "$RUNLEVEL" != "unknown" ]]; then
-		/etc/init.d/pl_sshd restart
+		/etc/init.d/autofs restart
+		/etc/init.d/sshd restart
+		/etc/init.d/pl_sshd start
 	fi
 fi
 
 %preun
+RUNLEVEL=`/sbin/runlevel`
+
 if [ "$1" = 0 ]; then
+	#
+	# stop pl_sshd, remove it from rcX.d init dirs, remove link
+	# to sshd's pam config
+	#
+	[ "$RUNLEVEL" != "unknown" ] && /etc/init.d/pl_sshd stop
 	chkconfig --del pl_sshd
+	rm -f /etc/pam.d/pl_sshd
+
+	#
+	# remove funky config options for sshd (so that when we restart
+	# things will operate normally i.e., without automount magic),
+	# then restart
+	#
+	rm /etc/sysconfig/sshd
+	[ "$RUNLEVEL" != "unknown" ] && /etc/init.d/sshd restart
+
+	#
+	# stop automounter, remove entry from auto.master, restart if
+	# necessary
+	#
+	[ "$RUNLEVEL" != "unknown" ] && /etc/init.d/autofs stop
+	auto_master=/etc/auto.master
+	mv $auto_master $auto_master.pl_sshd.preun
+	sed -e '\,^/var/pl_sshd/keys,d' $auto_master.pl_sshd.preun \
+	    >$auto_master
+
+	[ "$RUNLEVEL" != "unknown" ] && /etc/init.d/autofs start
 fi
 
 
@@ -59,30 +115,6 @@ fi
 
 
 %changelog
-* Tue Nov 25 2003 Steve Muir <smuir@cs.princeton.edu>
-- fixed a couple of Node Manager bugs:
-  - bootstrapping pl_conf state when boot server unreachable
-  - canonical hostnames should be all lower-case
-- fixup UID and GID of users within vservers to match real world
-- enable access to dynamic slices through port 806 sshd
-
-* Sun Oct 26 2003 Aaron Klingaman <Aaron.L.Klingaman@intel.com>
-- readded start/stop only when runlevel is known, for install purposes
-
-* Thu Oct 16 2003 Jeff Sedayao <Jeff.Sedayao@intel.com>
-- Fixed bug in pl_conf  - it was getting negative wait times.  Also added
-  duke4 as a trusted user. 
-
-* Tue Oct  8 2003 Jeff Sedayao <Jeff.Sedayao@intel.com>
-- Removed special fetch login from init function, updated release
-
-* Tue Oct  7 2003 Jeff Sedayao <Jeff.Sedayao@intel.com>
-- Moved special fetch login into main loop, fix account deletion
-  problem
-
-* Tue Oct  7 2003 Aaron Klingaman <Aaron.L.Klingaman@intel.com>
-- Commented out code to start pl_* upon install
-
-* Wed Aug 26 2003 Tammo Spalink <tammo.spalink@intel.com>
-- Initial build.
+* Mon Dec  1 2003 Steve Muir <smuir@cs.princeton.edu>
+- initial creation from files in sidewinder repository
 
