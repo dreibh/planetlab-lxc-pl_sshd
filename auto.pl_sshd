@@ -5,7 +5,7 @@
 # Mark Huang <mlhuang@cs.princeton.edu>
 # Copyright (C) 2004 The Trustees of Princeton University
 #
-# $Id: auto.pl_sshd,v 1.3 2004/10/04 18:43:16 mlh-pl_sshd Exp $
+# $Id: auto.pl_sshd,v 1.3 2004/10/04 22:20:11 mlhuang Exp $
 #
 
 usage()
@@ -25,36 +25,37 @@ if [ -f "$home/.ssh/authorized_keys" ] ; then
 fi
 
 # Try virtual server home directory next
-vhome=/vservers/$slice/$(su - $slice -c "echo \$HOME")
+vbase=/vservers/$slice
+keyfile=/home/$slice/.ssh/authorized_keys
 
-echo -n "Retrieving SSH keys for $slice..." >/dev/stderr
+echo -n "Retrieving SSH keys for $slice... " >/dev/stderr
 
-# Execute this script as the slice user. Remember that the script
-# 1. Must be executable by any shell.
-# 2. Must not write to stdout.
-# 3. Must return a non-zero exit code if an error occurs.
-# 4. May be run by a malicious shell.
-
-su - $slice >/dev/stderr <<EOF
-install -d -m 700 \$HOME/.ssh/
-touch \$HOME/.ssh/authorized_keys
-chmod 600 \$HOME/.ssh/authorized_keys
-
-curl -s \
+keydata=`curl -s \
     --fail \
-    --connect-timeout 30 \
-    --max-time 60 \
-    --output \$HOME/.ssh/authorized_keys \
-    "http://localhost:815/keys?slice=$slice"
-EOF
+    --max-time 15 \
+    "http://localhost:815/keys?slice=$slice"`
 
 rc=$?
-if [ $rc -ne 0 ] ; then
-    echo "failed with error $rc." >/dev/stderr
+if [ "$rc" -ne 0 ] ; then
+    echo "curl failed with error $rc." >/dev/stderr
     exit $rc
+fi
+
+# write the keyfile while running as the slice user, this prevents
+# various potential exploits
+su - $slice >/dev/null 2>&1 <<EOF
+install -d -m 700 ${keyfile%/*}
+touch $keyfile
+chmod 600 $keyfile
+echo $keydata >$keyfile
+EOF
+
+if [ "`cat $vbase$keyfile 2>/dev/null`" != "$keydata" ]; then
+    echo "unable to write $vbase$keyfile." >/dev/stderr
+    exit 1
 fi
 
 echo "succeeded." >/dev/stderr
 
-echo "--bind,-r :$vhome/.ssh"
+echo "--bind,-r :$vbase/home/$slice/.ssh"
 exit 0
