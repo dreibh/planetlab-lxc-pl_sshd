@@ -13,7 +13,7 @@ SSH server configuration for PlanetLab nodes.  Configures an automounted
 directory as source for authorized_keys files and points sshd to that
 directory.
 
-$Header: /cvs/pl_sshd/pl_sshd.spec,v 1.3 2003/12/01 21:22:53 sjm-pl_sshd Exp $.
+$Header: /cvs/pl_sshd/pl_sshd.spec,v 1.4 2003/12/01 22:16:47 sjm-pl_sshd Exp $
 %prep
 %setup
 
