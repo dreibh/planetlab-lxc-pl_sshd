@@ -1,7 +1,7 @@
 Summary: SSH server config for PlanetLab
 Name: pl_sshd
 Version: 1.0
-Release: 2
+Release: 3
 Requires: autofs, openssh-server
 Copyright: GPL
 URL: http://www.planet-lab.org
@@ -13,7 +13,7 @@ SSH server configuration for PlanetLab nodes.  Configures an automounted
 directory as source for authorized_keys files and points sshd to that
 directory.
 
-$Header: /cvs/pl_sshd/pl_sshd.spec,v 1.5 2003/12/02 00:22:03 sjm-pl_sshd Exp $
+$Header: /cvs/pl_sshd/pl_sshd.spec,v 1.6 2003/12/03 22:33:50 sjm-pl_sshd Exp $
 %prep
 %setup
 
@@ -71,15 +71,17 @@ if [ "$1" -ge 1 ]; then
 	chkconfig --add pl_sshd
 
 	if [[ "$RUNLEVEL" != "unknown" ]]; then
-		#
-		# starting pl_sshd before restarting sshd gives us a
-		# chance of recovery if stopping sshd aborts the
-		# update process e.g., because we're logged in using
-		# ssh.
-		#
-		/etc/init.d/autofs restart
-		/etc/init.d/pl_sshd start
-		/etc/init.d/sshd restart
+	    #
+	    # don't try to start/restart various things automatically,
+	    # it's too ugly (particularly if we're upgrading while
+	    # connected over ssh)
+	    #
+	    echo
+	    echo "You need to manually restart autofs and sshd, and"
+	    echo "start the pl_sshd (ssh on port 806) service."
+	    echo "Make sure you know what you're doing, particularly"
+	    echo "if you're making this change over an ssh connection."
+	    echo
 	fi
 fi
 
@@ -97,11 +99,16 @@ if [ "$1" -ge "0" ]; then
 
 	#
 	# remove funky config options for sshd (so that when we restart
-	# things will operate normally i.e., without automount magic),
-	# then restart
+	# things will operate normally i.e., without automount magic)
 	#
 	rm /etc/sysconfig/sshd
-	[ "$RUNLEVEL" != "unknown" ] && /etc/init.d/sshd restart
+	if [ "$RUNLEVEL" != "unknown" ]; then
+	    echo
+	    echo "You need to manually restart sshd."
+	    echo "Make sure you know what you're doing, particularly"
+	    echo "if you're making this change over an ssh connection."
+	    echo
+	fi
 
 	#
 	# stop automounter, remove entry from auto.master, restart if
