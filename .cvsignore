@@ -1,0 +1,5 @@
+.rpmbuild
+.rpmmacros
+.rpmrc
+pl_sshd*.rpm
+pl_sshd*.tar.gz
