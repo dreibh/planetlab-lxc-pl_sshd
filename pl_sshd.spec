@@ -1,6 +1,6 @@
 %define name pl_sshd
 %define version 1.0
-%define release 5.planetlab%{?date:.%{date}}
+%define release 6.planetlab%{?date:.%{date}}
 
 Vendor: PlanetLab
 Packager: PlanetLab Central <support@planet-lab.org>
@@ -33,7 +33,7 @@ directory.
 mkdir -p $RPM_BUILD_ROOT/var/pl_sshd/keys
 install -D -m 0755 pl_sshd.sh $RPM_BUILD_ROOT/usr/local/sbin/pl_sshd.sh
 install -D -m 0755 pl_sshd $RPM_BUILD_ROOT/etc/init.d/pl_sshd
-install -D -m 0755 auto.pl_sshd $RPM_BUILD_ROOT/etc/auto.pl_sshd
+install -D -m 0755 auto.pl_sshd.py $RPM_BUILD_ROOT/etc/auto.pl_sshd
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -137,6 +137,9 @@ fi
 
 
 %changelog
+* Thu Apr  7 2005 Steve Muir <smuir@cs.princeton.edu>
+- convert auto.pl_sshd to a python script (simpler and less error-prone)
+
 * Mon Dec  1 2003 Steve Muir <smuir@cs.princeton.edu>
 - initial creation from files in sidewinder repository
 
