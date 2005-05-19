@@ -3,7 +3,7 @@
 # Init file for PlanetLab OpenSSH server daemon (copied from standard
 # sshd init file, minor modifications made).
 #
-# chkconfig: 2345 55 25
+# chkconfig: 2345 56 25
 # description: PlanetLab OpenSSH server daemon
 #
 # processname: sshd
