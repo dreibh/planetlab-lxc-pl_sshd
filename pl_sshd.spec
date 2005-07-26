@@ -49,8 +49,6 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %post
-RUNLEVEL=`/sbin/runlevel`
-
 # 1 = install, 2 = upgrade/reinstall
 if [ $1 -ge 1 ]; then
     # create the magic directory for automount
@@ -78,7 +76,7 @@ if [ $1 -ge 1 ]; then
 
     chkconfig --add pl_sshd
 
-    if [[ "$RUNLEVEL" != "unknown" ]]; then
+    if [[ "$PL_BOOTCD" != "1" ]]; then
 	#
 	# don't try to start/restart various things automatically,
 	# it's too ugly (particularly if we're upgrading while
@@ -94,15 +92,13 @@ if [ $1 -ge 1 ]; then
 fi
 
 %preun
-RUNLEVEL=`/sbin/runlevel`
-
 # 0 = erase, 1 = upgrade
 if [ $1 -eq 0 ]; then
 	#
 	# stop pl_sshd, remove it from rcX.d init dirs, remove link
 	# to sshd's pam config
 	#
-	[ "$RUNLEVEL" = "unknown" ] || /etc/init.d/pl_sshd stop || :
+	[ "$PL_BOOTCD" = "1" ] || /etc/init.d/pl_sshd stop || :
 	chkconfig --del pl_sshd
 	rm -f /etc/pam.d/pl_sshd
 
@@ -111,7 +107,7 @@ if [ $1 -eq 0 ]; then
 	# things will operate normally i.e., without automount magic)
 	#
 	rm /etc/sysconfig/sshd
-	if [ "$RUNLEVEL" != "unknown" ]; then
+	if [ "$PL_BOOTCD" != "1" ]; then
 	    echo
 	    echo "You need to manually restart sshd."
 	    echo "Make sure you know what you're doing, particularly"
@@ -123,13 +119,13 @@ if [ $1 -eq 0 ]; then
 	# stop automounter, remove entry from auto.master, restart if
 	# necessary
 	#
-	[ "$RUNLEVEL" != "unknown" ] && /etc/init.d/autofs stop
+	[ "$PL_BOOTCD" != "1" ] && /etc/init.d/autofs stop
 	auto_master=/etc/auto.master
 	mv $auto_master $auto_master.pl_sshd.preun
 	sed -e '\,^/var/pl_sshd/keys,d' $auto_master.pl_sshd.preun \
 	    >$auto_master
 
-	[ "$RUNLEVEL" != "unknown" ] && /etc/init.d/autofs start
+	[ "$PL_BOOTCD" != "1" ] && /etc/init.d/autofs start
 fi
 
 
