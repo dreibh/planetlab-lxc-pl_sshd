@@ -1,6 +1,6 @@
 %define name pl_sshd
 %define version 1.0
-%define release 8.planetlab%{?date:.%{date}}
+%define release 9.planetlab%{?date:.%{date}}
 
 Vendor: PlanetLab
 Packager: PlanetLab Central <support@planet-lab.org>
@@ -31,7 +31,7 @@ directory.
 
 %install
 mkdir -p $RPM_BUILD_ROOT/var/pl_sshd/keys
-install -D -m 0755 pl_sshd.sh $RPM_BUILD_ROOT/usr/local/sbin/pl_sshd.sh
+install -D -m 0755 pl_sshd.sh $RPM_BUILD_ROOT/usr/local/sbin/pl_sshd
 install -D -m 0755 pl_sshd $RPM_BUILD_ROOT/etc/init.d/pl_sshd
 install -D -m 0755 auto.pl_sshd.py $RPM_BUILD_ROOT/etc/auto.pl_sshd
 
@@ -41,7 +41,7 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %defattr(-,root,root)
 %dir /var/pl_sshd/keys
-%attr(0755,root,root) /usr/local/sbin/pl_sshd.sh
+%attr(0755,root,root) /usr/local/sbin/pl_sshd
 %attr(0755,root,root) /etc/init.d/pl_sshd
 %attr(0755,root,root) /etc/auto.pl_sshd
 
@@ -133,6 +133,9 @@ fi
 
 
 %changelog
+* Wed Oct 12 2005 Steve Muir <smuir@cs.princeton.edu>
+- fix pl_sshd script name and argv[0] to satisfy re-exec requirements
+
 * Thu Apr  7 2005 Steve Muir <smuir@cs.princeton.edu>
 - convert auto.pl_sshd to a python script (simpler and less error-prone)
 

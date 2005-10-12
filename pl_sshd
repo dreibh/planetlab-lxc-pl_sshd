@@ -23,7 +23,7 @@ RETVAL=0
 prog="pl_sshd"
 
 # Some functions to make the below more readable
-SSHD=/usr/local/sbin/pl_sshd.sh
+SSHD=/usr/local/sbin/pl_sshd
 PID_FILE=/var/run/pl_sshd.pid
 
 do_restart_sanity_check()

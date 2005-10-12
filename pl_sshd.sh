@@ -21,4 +21,4 @@
 name=pl_sshd
 echo "$@" | grep -q -- '-p[ 0-9]' || port='-p 806'
 
-exec -a /usr/sbin/pl_sshd /usr/sbin/sshd -o "PidFile /var/run/$name.pid" $port "$@"
+exec -a /usr/local/sbin/pl_sshd /usr/sbin/sshd -o "PidFile /var/run/$name.pid" $port "$@"
