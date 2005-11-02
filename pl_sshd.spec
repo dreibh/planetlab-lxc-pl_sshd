@@ -33,7 +33,6 @@ directory.
 mkdir -p $RPM_BUILD_ROOT/var/pl_sshd/keys
 install -D -m 0755 pl_sshd.sh $RPM_BUILD_ROOT/usr/local/sbin/pl_sshd
 install -D -m 0755 pl_sshd $RPM_BUILD_ROOT/etc/init.d/pl_sshd
-install -D -m 0755 auto.pl_sshd.py $RPM_BUILD_ROOT/etc/auto.pl_sshd
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -43,7 +42,6 @@ rm -rf $RPM_BUILD_ROOT
 %dir /var/pl_sshd/keys
 %attr(0755,root,root) /usr/local/sbin/pl_sshd
 %attr(0755,root,root) /etc/init.d/pl_sshd
-%attr(0755,root,root) /etc/auto.pl_sshd
 
 %pre
 
@@ -109,6 +107,10 @@ fi
 
 
 %changelog
+* Wed Nov  2 2005 Steve Muir <smuir@cs.princeton.edu>
+- don't fanny around using the automounter to access ssh keys in vservers,
+  pl_conf now writes them into the normal locations
+
 * Wed Oct 12 2005 Steve Muir <smuir@cs.princeton.edu>
 - fix pl_sshd script name and argv[0] to satisfy re-exec requirements
 
