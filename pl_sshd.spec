@@ -68,9 +68,11 @@ if [ $1 -ge 1 ]; then
 	#
 	[ "$PL_BOOTCD" != "1" ] && /etc/init.d/autofs stop
 	auto_master=/etc/auto.master
-	mv $auto_master $auto_master.pl_sshd.post
-	sed -e '\,^/var/pl_sshd/keys,d' $auto_master.pl_sshd.post \
-	    >$auto_master
+	orig=$auto_master
+	backup=$auto_master.pl_sshd.post
+	mv $orig $backup
+	sed -e '\,^/var/pl_sshd/keys,d' $backup > $orig && rm $backup || \
+	    mv $backup $orig
 
 	[ "$PL_BOOTCD" != "1" ] && /etc/init.d/autofs start
     fi
