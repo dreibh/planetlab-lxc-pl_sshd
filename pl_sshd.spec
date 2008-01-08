@@ -1,11 +1,18 @@
+#
+# $Id$
+#
+%define url $URL$
+
 %define name pl_sshd
 %define version 1.0
-%define release 10%{?pldistro:.%{pldistro}}%{?date:.%{date}}
+%define taglevel 10
+
+%define release %{taglevel}%{?pldistro:.%{pldistro}}%{?date:.%{date}}
 
 Vendor: PlanetLab
 Packager: PlanetLab Central <support@planet-lab.org>
-Distribution: PlanetLab 3.0
-URL: http://cvs.planet-lab.org/cvs/pl_sshd
+Distribution: PlanetLab %{plrelease}
+URL: %(echo %{url} | cut -d ' ' -f 2)
 
 Summary: SSH server config for PlanetLab
 Name: %{name}
