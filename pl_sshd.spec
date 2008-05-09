@@ -18,7 +18,7 @@ Summary: SSH server config for PlanetLab
 Name: %{name}
 Version: %{version}
 Release: %{release}
-Requires: autofs, openssh-server
+Requires: openssh-server
 License: GPL
 Group: System Environment/Base
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
