@@ -5,7 +5,7 @@
 
 %define name pl_sshd
 %define version 1.0
-%define taglevel 10
+%define taglevel 11
 
 %define release %{taglevel}%{?pldistro:.%{pldistro}}%{?date:.%{date}}
 
@@ -116,6 +116,9 @@ fi
 
 
 %changelog
+* Fri May 09 2008 Stephen Soltesz <soltesz@cs.princeton.edu> - pl_sshd-1.0-11
+- 
+
 * Wed Nov  2 2005 Steve Muir <smuir@cs.princeton.edu>
 - don't fanny around using the automounter to access ssh keys in vservers,
   pl_conf now writes them into the normal locations
